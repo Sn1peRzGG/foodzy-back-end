@@ -35,12 +35,16 @@ export class UsersService {
 	}
 
 	async update(userId: number, data: any): Promise<User> {
+		delete data.userId
+
 		if (data.password) {
 			data.password = await bcrypt.hash(data.password, 10)
 		}
+
 		const updated = await this.userModel
-			.findOneAndUpdate({ userId }, data, { new: true })
+			.findOneAndUpdate({ userId }, { $set: data }, { returnDocument: 'after' })
 			.exec()
+
 		if (!updated) throw new NotFoundException()
 		return updated
 	}

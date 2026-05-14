@@ -10,7 +10,13 @@ async function bootstrap() {
 		origin: 'http://localhost:3000',
 		credentials: true,
 	})
-	app.useGlobalPipes(new ValidationPipe({ whitelist: true }))
+	app.setGlobalPrefix('api/v1')
+	app.useGlobalPipes(
+		new ValidationPipe({
+			whitelist: true,
+			transform: true,
+		}),
+	)
 	await app.listen(5555)
 }
 bootstrap()
