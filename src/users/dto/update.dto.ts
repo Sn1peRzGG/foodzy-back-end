@@ -1,21 +1,27 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { CreateUserDto } from './create.dto'
 import {
+	ArrayUnique,
 	IsArray,
-	IsOptional,
-	ValidateNested,
-	IsNumber,
 	IsEnum,
+	IsInt,
+	IsOptional,
+	Min,
+	ValidateNested,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 
 class CartItemDto {
-	@IsNumber()
+	@Type(() => Number)
+	@IsInt()
+	@Min(1)
 	productId!: number
 
-	@IsNumber()
 	@IsOptional()
-	quantity!: number
+	@Type(() => Number)
+	@IsInt()
+	@Min(1)
+	quantity?: number
 }
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
@@ -31,6 +37,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
 	@IsOptional()
 	@IsArray()
-	@IsNumber({}, { each: true })
+	@ArrayUnique()
+	@IsInt({ each: true })
 	wishlist?: number[]
 }

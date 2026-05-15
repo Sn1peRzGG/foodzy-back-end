@@ -3,30 +3,54 @@ import { Document } from 'mongoose'
 
 export type ProductDocument = Product & Document
 
-@Schema()
+@Schema({
+	timestamps: true,
+	versionKey: false,
+})
 export class Product {
-	@Prop({ unique: true })
+	@Prop({
+		unique: true,
+		required: true,
+	})
 	productId!: number
 
-	@Prop({ required: true })
+	@Prop({
+		required: true,
+		trim: true,
+	})
 	name!: string
 
-	@Prop()
+	@Prop({
+		default: '',
+	})
 	description!: string
 
-	@Prop()
+	@Prop({
+		required: true,
+	})
 	imageUrl!: string
 
-	@Prop()
+	@Prop({
+		required: true,
+	})
 	category!: string
 
-	@Prop({ required: true })
+	@Prop({
+		required: true,
+		min: 0,
+	})
 	price!: number
 
-	@Prop()
+	@Prop({
+		min: 0,
+	})
 	oldPrice!: number
 
-	@Prop({ default: 0 })
+	@Prop({
+		default: 0,
+		min: 0,
+		max: 5,
+	})
 	rating!: number
 }
 

@@ -1,42 +1,54 @@
 import {
 	IsEmail,
-	IsString,
-	Matches,
 	IsOptional,
 	IsPhoneNumber,
+	IsString,
+	Matches,
+	MaxLength,
 	MinLength,
 } from 'class-validator'
 
 export class CreateUserDto {
-	@Matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, { message: 'Invalid email format' })
+	@IsEmail(
+		{},
+		{
+			message: 'Invalid email format',
+		},
+	)
 	email!: string
 
-	@Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$/, {
+	@Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, {
 		message:
-			'Password too weak: 8+ characters, 1 uppercase, 1 lowercase, 1 number',
+			'Password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter and 1 number',
 	})
 	password!: string
 
 	@IsString()
 	@MinLength(2)
+	@MaxLength(50)
 	firstName!: string
 
 	@IsString()
-	@IsOptional()
-	lastName?: string
+	@MinLength(2)
+	@MaxLength(50)
+	lastName!: string
 
-	@IsPhoneNumber(undefined, { message: 'Invalid phone number' })
+	@IsPhoneNumber(undefined, {
+		message: 'Invalid phone number',
+	})
 	phoneNumber!: string
 
-	@IsString()
 	@IsOptional()
+	@IsString()
+	@MaxLength(100)
 	city?: string
 
-	@IsString()
 	@IsOptional()
+	@IsString()
+	@MaxLength(255)
 	address?: string
 
-	@IsString()
 	@IsOptional()
+	@IsString()
 	avatarUrl?: string
 }

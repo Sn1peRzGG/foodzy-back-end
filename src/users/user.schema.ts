@@ -5,51 +5,96 @@ export type UserDocument = User & Document
 
 @Schema({ _id: false })
 class CartItem {
-	@Prop({ required: true })
+	@Prop({
+		required: true,
+		min: 1,
+	})
 	productId!: number
 
-	@Prop({ required: true, min: 1, default: 1 })
+	@Prop({
+		required: true,
+		min: 1,
+		default: 1,
+	})
 	quantity!: number
 }
 
 const CartItemSchema = SchemaFactory.createForClass(CartItem)
 
-@Schema()
+@Schema({
+	timestamps: true,
+	versionKey: false,
+})
 export class User {
-	@Prop({ unique: true })
+	@Prop({
+		unique: true,
+		required: true,
+	})
 	userId!: number
 
-	@Prop({ required: true, unique: true })
+	@Prop({
+		required: true,
+		unique: true,
+		lowercase: true,
+		trim: true,
+	})
 	email!: string
 
-	@Prop({ required: true })
+	@Prop({
+		required: true,
+		select: false,
+	})
 	password!: string
 
-	@Prop({ required: true })
+	@Prop({
+		required: true,
+		trim: true,
+	})
 	firstName!: string
 
-	@Prop()
+	@Prop({
+		required: true,
+		trim: true,
+	})
 	lastName!: string
 
-	@Prop({ unique: true, required: true })
+	@Prop({
+		required: true,
+		unique: true,
+	})
 	phoneNumber!: string
 
-	@Prop()
+	@Prop({
+		default: '',
+	})
 	city!: string
 
-	@Prop()
+	@Prop({
+		default: '',
+	})
 	address!: string
 
-	@Prop({ default: 'USER', enum: ['USER', 'ADMIN'] })
+	@Prop({
+		enum: ['USER', 'ADMIN'],
+		default: 'USER',
+	})
 	role!: string
 
-	@Prop()
+	@Prop({
+		default: '',
+	})
 	avatarUrl!: string
 
-	@Prop({ type: [CartItemSchema], default: [] })
+	@Prop({
+		type: [CartItemSchema],
+		default: [],
+	})
 	cart!: CartItem[]
 
-	@Prop({ type: [Number], default: [] })
+	@Prop({
+		type: [Number],
+		default: [],
+	})
 	wishlist!: number[]
 }
 

@@ -1,15 +1,22 @@
 import {
-	Controller,
-	Get,
-	Post,
+	BadRequestException,
 	Body,
-	Patch,
-	Param,
+	Controller,
 	Delete,
-	UseGuards,
-	Req,
 	ForbiddenException,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	Patch,
+	Post,
+	Req,
+	UploadedFile,
+	UseGuards,
+	UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { memoryStorage } from 'multer'
 import { UsersService } from './users.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
@@ -22,8 +29,9 @@ export class UsersController {
 	constructor(private readonly usersService: UsersService) {}
 
 	@Post()
-	create(@Body() createUserDto: CreateUserDto) {
-		return this.usersService.create(createUserDto)
+	@HttpCode(HttpStatus.CREATED)
+	create(@Body() dto: CreateUserDto) {
+		return this.usersService.create(dto)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
@@ -35,30 +43,61 @@ export class UsersController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get(':id')
-	findOne(@Param('id') id: string) {
-		return this.usersService.findOne(+id)
+	findOne(@Param('id') id: string, @Req() req: any) {
+		const targetId = Number(id)
+
+		if (req.user.role !== 'ADMIN' && req.user.userId !== targetId) {
+			throw new ForbiddenException({
+				message: 'Access denied',
+			})
+		}
+
+		return this.usersService.findOne(targetId)
 	}
 
 	@UseGuards(JwtAuthGuard)
 	@Patch(':id')
+	@UseInterceptors(
+		FileInterceptor('file', {
+			storage: memoryStorage(),
+			limits: {
+				fileSize: 2 * 1024 * 1024,
+			},
+			fileFilter: (req, file, cb) => {
+				const allowed = ['image/jpeg', 'image/png', 'image/webp']
+
+				if (!allowed.includes(file.mimetype)) {
+					return cb(
+						new BadRequestException(
+							'Only JPG, PNG and WEBP images are allowed',
+						),
+						false,
+					)
+				}
+
+				cb(null, true)
+			},
+		}),
+	)
 	update(
 		@Param('id') id: string,
-		@Body() updateUserDto: UpdateUserDto,
+		@Body() dto: UpdateUserDto,
 		@Req() req: any,
+		@UploadedFile() file?: Express.Multer.File,
 	) {
-		const targetId = parseInt(id, 10)
+		const targetId = Number(id)
 
 		if (req.user.role !== 'ADMIN' && req.user.userId !== targetId) {
-			throw new ForbiddenException()
+			throw new ForbiddenException({
+				message: 'Access denied',
+			})
 		}
-
-		const dataToUpdate = { ...updateUserDto }
 
 		if (req.user.role !== 'ADMIN') {
-			delete (dataToUpdate as any).role
+			delete (dto as any).role
 		}
 
-		return this.usersService.update(targetId, dataToUpdate)
+		return this.usersService.update(targetId, dto, file)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
