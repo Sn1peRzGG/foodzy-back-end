@@ -38,7 +38,7 @@ export class CreateProductDto {
 
 	@IsOptional()
 	@Type(() => Number)
-	@IsInt()
+	@IsNumber({ maxDecimalPlaces: 1 })
 	@Min(0)
 	@Max(5)
 	rating?: number

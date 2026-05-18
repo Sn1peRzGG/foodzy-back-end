@@ -17,12 +17,12 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
-import { UsersService } from './users.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { RolesGuard } from '../auth/roles.guard'
 import { Roles } from '../auth/roles.decorator'
+import { RolesGuard } from '../auth/roles.guard'
 import { CreateUserDto } from './dto/create.dto'
 import { UpdateUserDto } from './dto/update.dto'
+import { UsersService } from './users.service'
 
 @Controller('users')
 export class UsersController {
@@ -61,7 +61,7 @@ export class UsersController {
 		FileInterceptor('file', {
 			storage: memoryStorage(),
 			limits: {
-				fileSize: 2 * 1024 * 1024,
+				fileSize: 4 * 1024 * 1024,
 			},
 			fileFilter: (req, file, cb) => {
 				const allowed = ['image/jpeg', 'image/png', 'image/webp']

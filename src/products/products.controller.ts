@@ -16,12 +16,12 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
-import { ProductsService } from './products.service'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { Roles } from '../auth/roles.decorator'
+import { RolesGuard } from '../auth/roles.guard'
 import { CreateProductDto } from './dto/create.dto'
 import { UpdateProductDto } from './dto/update.dto'
-import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { RolesGuard } from '../auth/roles.guard'
-import { Roles } from '../auth/roles.decorator'
+import { ProductsService } from './products.service'
 
 @Controller('products')
 export class ProductsController {
@@ -35,7 +35,7 @@ export class ProductsController {
 		FileInterceptor('file', {
 			storage: memoryStorage(),
 			limits: {
-				fileSize: 2 * 1024 * 1024,
+				fileSize: 4 * 1024 * 1024,
 			},
 			fileFilter: (req, file, cb) => {
 				const allowed = ['image/jpeg', 'image/png', 'image/webp']
@@ -91,7 +91,7 @@ export class ProductsController {
 		FileInterceptor('file', {
 			storage: memoryStorage(),
 			limits: {
-				fileSize: 2 * 1024 * 1024,
+				fileSize: 4 * 1024 * 1024,
 			},
 			fileFilter: (req, file, cb) => {
 				const allowed = ['image/jpeg', 'image/png', 'image/webp']
