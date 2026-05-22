@@ -14,13 +14,13 @@ import {
 	UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
 import { CategoriesService } from './categories.service'
 import { CreateCategoryDto } from './dto/create.dto'
 import { UpdateCategoryDto } from './dto/update.dto'
+import { multerImageOptions } from '../common/config/multer.config'
 
 @Controller('categories')
 export class CategoriesController {
@@ -30,28 +30,7 @@ export class CategoriesController {
 	@Roles('ADMIN')
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 4 * 1024 * 1024,
-			},
-			fileFilter: (req, file, cb) => {
-				const allowed = ['image/jpeg', 'image/png', 'image/webp']
-
-				if (!allowed.includes(file.mimetype)) {
-					return cb(
-						new BadRequestException(
-							'Only JPG, PNG and WEBP images are allowed',
-						),
-						false,
-					)
-				}
-
-				cb(null, true)
-			},
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', multerImageOptions))
 	create(
 		@Body() dto: CreateCategoryDto,
 		@UploadedFile() file: Express.Multer.File,
@@ -64,7 +43,6 @@ export class CategoriesController {
 				},
 			})
 		}
-
 		return this.categoriesService.create(dto, file)
 	}
 
@@ -81,28 +59,7 @@ export class CategoriesController {
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
 	@Patch(':id')
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 4 * 1024 * 1024,
-			},
-			fileFilter: (req, file, cb) => {
-				const allowed = ['image/jpeg', 'image/png', 'image/webp']
-
-				if (!allowed.includes(file.mimetype)) {
-					return cb(
-						new BadRequestException(
-							'Only JPG, PNG and WEBP images are allowed',
-						),
-						false,
-					)
-				}
-
-				cb(null, true)
-			},
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', multerImageOptions))
 	update(
 		@Param('id') id: string,
 		@Body() dto: UpdateCategoryDto,

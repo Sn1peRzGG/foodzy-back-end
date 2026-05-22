@@ -5,25 +5,25 @@ import {
 	NotFoundException,
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import { Product, ProductDocument } from './product.schema'
-import * as fs from 'fs/promises'
-import { existsSync, mkdirSync } from 'fs'
-import { extname, join } from 'path'
 import { randomUUID } from 'crypto'
+import { existsSync, mkdirSync } from 'fs'
+import * as fs from 'fs/promises'
+import * as mongoose from 'mongoose'
+import { extname, join } from 'path'
 import { CreateProductDto } from './dto/create.dto'
 import { UpdateProductDto } from './dto/update.dto'
+import { Product, ProductDocument } from './product.schema'
 
 @Injectable()
 export class ProductsService {
 	constructor(
 		@InjectModel(Product.name)
-		private readonly productModel: Model<ProductDocument>,
+		private readonly productModel: mongoose.Model<ProductDocument>,
 	) {}
 
 	private readonly uploadPath = join(process.cwd(), 'public', 'products')
 
-	private async saveFile(file: Express.Multer.File) {
+	private async saveFile(file: Express.Multer.File): Promise<string> {
 		if (!existsSync(this.uploadPath)) {
 			mkdirSync(this.uploadPath, { recursive: true })
 		}
@@ -36,14 +36,14 @@ export class ProductsService {
 		return `/products/${filename}`
 	}
 
-	private async deleteFile(path: string) {
+	private async deleteFile(path: string): Promise<void> {
 		try {
 			const relativePath = path.replace(/^\/+/, '')
-
 			const fullPath = join(process.cwd(), 'public', relativePath)
-
 			await fs.unlink(fullPath)
-		} catch {}
+		} catch (error) {
+			void error
+		}
 	}
 
 	async create(dto: CreateProductDto, file: Express.Multer.File) {
@@ -61,7 +61,6 @@ export class ProductsService {
 		}
 
 		const last = await this.productModel.findOne().sort({ productId: -1 })
-
 		const productId = last?.productId ? last.productId + 1 : 1
 
 		let imageUrl = ''
@@ -69,13 +68,17 @@ export class ProductsService {
 		try {
 			imageUrl = await this.saveFile(file)
 
-			const product = await this.productModel.create({
+			const productData = {
 				...dto,
+				category: new mongoose.Types.ObjectId(dto.category),
 				productId,
 				imageUrl,
-			})
+			}
 
-			return product
+			const createdProduct = new this.productModel(productData)
+			await createdProduct.save()
+
+			return await createdProduct.populate('category')
 		} catch {
 			if (imageUrl) {
 				await this.deleteFile(imageUrl)
@@ -88,7 +91,11 @@ export class ProductsService {
 	}
 
 	async findAll() {
-		return this.productModel.find().sort({ productId: 1 }).lean()
+		return this.productModel
+			.find()
+			.populate('category')
+			.sort({ productId: 1 })
+			.lean()
 	}
 
 	async search(name?: string, category?: string) {
@@ -101,15 +108,22 @@ export class ProductsService {
 			}
 		}
 
-		if (category) {
-			filter.category = category
+		if (category && mongoose.Types.ObjectId.isValid(category)) {
+			filter.category = new mongoose.Types.ObjectId(category)
 		}
 
-		return this.productModel.find(filter).sort({ productId: 1 }).lean()
+		return this.productModel
+			.find(filter)
+			.populate('category')
+			.sort({ productId: 1 })
+			.lean()
 	}
 
 	async findOne(productId: number) {
-		const product = await this.productModel.findOne({ productId }).lean()
+		const product = await this.productModel
+			.findOne({ productId })
+			.populate('category')
+			.lean()
 
 		if (!product) {
 			throw new NotFoundException({
@@ -157,16 +171,20 @@ export class ProductsService {
 				imageUrl = await this.saveFile(file)
 			}
 
-			const updated = await this.productModel.findOneAndUpdate(
-				{ productId },
-				{
-					...dto,
-					imageUrl,
-				},
-				{
+			const updateData: mongoose.UpdateQuery<ProductDocument> = {
+				...dto,
+				imageUrl,
+			}
+
+			if (dto.category) {
+				updateData.category = new mongoose.Types.ObjectId(dto.category)
+			}
+
+			const updated = await this.productModel
+				.findOneAndUpdate({ productId }, updateData, {
 					returnDocument: 'after',
-				},
-			)
+				})
+				.populate('category')
 
 			if (file && current.imageUrl) {
 				await this.deleteFile(current.imageUrl)

@@ -1,5 +1,6 @@
 import {
 	IsInt,
+	IsMongoId,
 	IsNumber,
 	IsOptional,
 	IsString,
@@ -21,8 +22,7 @@ export class CreateProductDto {
 	@MaxLength(5000)
 	description?: string
 
-	@IsString()
-	@MinLength(2)
+	@IsMongoId()
 	category!: string
 
 	@Type(() => Number)

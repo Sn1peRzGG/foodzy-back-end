@@ -16,13 +16,21 @@ import {
 	UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
+import { Request } from 'express'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
+import { multerImageOptions } from '../common/config/multer.config'
 import { CreateUserDto } from './dto/create.dto'
 import { UpdateUserDto } from './dto/update.dto'
 import { UsersService } from './users.service'
+
+interface AuthenticatedRequest extends Request {
+	user: {
+		userId: number
+		role: string
+	}
+}
 
 @Controller('users')
 export class UsersController {
@@ -30,28 +38,7 @@ export class UsersController {
 
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 4 * 1024 * 1024,
-			},
-			fileFilter: (req, file, cb) => {
-				const allowed = ['image/jpeg', 'image/png', 'image/webp']
-
-				if (!allowed.includes(file.mimetype)) {
-					return cb(
-						new BadRequestException(
-							'Only JPG, PNG and WEBP images are allowed',
-						),
-						false,
-					)
-				}
-
-				cb(null, true)
-			},
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', multerImageOptions))
 	create(
 		@Body() dto: CreateUserDto,
 		@UploadedFile() file: Express.Multer.File,
@@ -64,7 +51,6 @@ export class UsersController {
 				},
 			})
 		}
-
 		return this.usersService.create(dto, file)
 	}
 
@@ -77,7 +63,7 @@ export class UsersController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get(':id')
-	findOne(@Param('id') id: string, @Req() req: any) {
+	findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
 		const targetId = Number(id)
 
 		if (req.user.role !== 'ADMIN' && req.user.userId !== targetId) {
@@ -91,32 +77,11 @@ export class UsersController {
 
 	@UseGuards(JwtAuthGuard)
 	@Patch(':id')
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 4 * 1024 * 1024,
-			},
-			fileFilter: (req, file, cb) => {
-				const allowed = ['image/jpeg', 'image/png', 'image/webp']
-
-				if (!allowed.includes(file.mimetype)) {
-					return cb(
-						new BadRequestException(
-							'Only JPG, PNG and WEBP images are allowed',
-						),
-						false,
-					)
-				}
-
-				cb(null, true)
-			},
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', multerImageOptions))
 	update(
 		@Param('id') id: string,
 		@Body() dto: UpdateUserDto,
-		@Req() req: any,
+		@Req() req: AuthenticatedRequest,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
 		const targetId = Number(id)

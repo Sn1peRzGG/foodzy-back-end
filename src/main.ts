@@ -1,9 +1,9 @@
-import { BadRequestException, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import cookieParser from 'cookie-parser'
 import { join } from 'path'
 import { AppModule } from './app.module'
+import { createCustomValidationPipe } from './common/pipes/custom-validation.pipe'
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule)
@@ -21,43 +21,7 @@ async function bootstrap() {
 
 	app.setGlobalPrefix('api/v1')
 
-	app.useGlobalPipes(
-		new ValidationPipe({
-			transform: true,
-			whitelist: true,
-			forbidNonWhitelisted: true,
-			stopAtFirstError: false,
-			transformOptions: {
-				enableImplicitConversion: true,
-			},
-			exceptionFactory: errors => {
-				const formattedErrors: Record<string, string[]> = {}
-
-				const parseErrors = (errorsList: any[], parent?: string) => {
-					for (const error of errorsList) {
-						const property = parent
-							? `${parent}.${error.property}`
-							: error.property
-
-						if (error.constraints) {
-							formattedErrors[property] = Object.values(error.constraints)
-						}
-
-						if (error.children?.length) {
-							parseErrors(error.children, property)
-						}
-					}
-				}
-
-				parseErrors(errors)
-
-				return new BadRequestException({
-					message: 'Validation failed',
-					errors: formattedErrors,
-				})
-			},
-		}),
-	)
+	app.useGlobalPipes(createCustomValidationPipe())
 
 	await app.listen(process.env.PORT ?? 5555)
 }

@@ -40,15 +40,13 @@ export class UsersService {
 	private async deleteFile(path: string) {
 		try {
 			const relativePath = path.replace(/^\/+/, '')
-
 			const fullPath = join(process.cwd(), 'public', relativePath)
-
 			await fs.unlink(fullPath)
 		} catch {}
 	}
 
-	private sanitizeUser(user: any) {
-		const obj = user.toObject ? user.toObject() : user
+	private sanitizeUser(user: UserDocument) {
+		const obj = user.toObject()
 		const { password, ...safeUser } = obj
 		return safeUser
 	}
@@ -122,7 +120,11 @@ export class UsersService {
 	}
 
 	async findOne(userId: number) {
-		const user = await this.userModel.findOne({ userId }).lean()
+		const user = await this.userModel
+			.findOne({ userId })
+			.populate('cart.product')
+			.populate('wishlist')
+			.lean()
 
 		if (!user) {
 			throw new NotFoundException({
@@ -140,6 +142,8 @@ export class UsersService {
 				email: email.toLowerCase(),
 			})
 			.select('+password')
+			.populate('cart.productId')
+			.populate('wishlist')
 
 		if (!user) {
 			throw new NotFoundException({
@@ -151,7 +155,7 @@ export class UsersService {
 	}
 
 	async update(userId: number, dto: UpdateUserDto, file?: Express.Multer.File) {
-		delete (dto as any).userId
+		const { ...updateData } = dto
 
 		const current = await this.userModel.findOne({
 			userId,
@@ -193,8 +197,8 @@ export class UsersService {
 			}
 		}
 
-		if (dto.password) {
-			dto.password = await bcrypt.hash(dto.password, 10)
+		if (updateData.password) {
+			updateData.password = await bcrypt.hash(updateData.password, 10)
 		}
 
 		let avatarUrl = current.avatarUrl
@@ -204,27 +208,36 @@ export class UsersService {
 				avatarUrl = await this.saveFile(file)
 			}
 
-			const updated = await this.userModel.findOneAndUpdate(
-				{ userId },
-				{
-					...dto,
-					email: dto.email?.toLowerCase(),
-					avatarUrl,
-				},
-				{
-					returnDocument: 'after',
-				},
-			)
+			const updated = await this.userModel
+				.findOneAndUpdate(
+					{ userId },
+					{
+						...updateData,
+						email: dto.email?.toLowerCase(),
+						avatarUrl,
+					},
+					{
+						returnDocument: 'after',
+					},
+				)
+				.populate('cart.productId')
+				.populate('wishlist')
 
 			if (file && current.avatarUrl) {
 				await this.deleteFile(current.avatarUrl)
 			}
 
+			if (!updated) {
+				throw new NotFoundException({ message: 'User not found' })
+			}
+
 			return this.sanitizeUser(updated)
-		} catch {
+		} catch (error) {
 			if (file && avatarUrl !== current.avatarUrl) {
 				await this.deleteFile(avatarUrl)
 			}
+
+			if (error instanceof NotFoundException) throw error
 
 			throw new InternalServerErrorException({
 				message: 'Failed to update user',

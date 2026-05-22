@@ -5,6 +5,7 @@ import {
 	IsArray,
 	IsEnum,
 	IsInt,
+	IsMongoId,
 	IsOptional,
 	Min,
 	ValidateNested,
@@ -12,10 +13,8 @@ import {
 import { Type } from 'class-transformer'
 
 class CartItemDto {
-	@Type(() => Number)
-	@IsInt()
-	@Min(1)
-	productId!: number
+	@IsMongoId({ message: 'productId must be a valid Mongo ObjectId' })
+	product!: string
 
 	@IsOptional()
 	@Type(() => Number)
@@ -38,6 +37,9 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 	@IsOptional()
 	@IsArray()
 	@ArrayUnique()
-	@IsInt({ each: true })
-	wishlist?: number[]
+	@IsMongoId({
+		each: true,
+		message: 'Each wishlist item must be a valid Mongo ObjectId',
+	})
+	wishlist?: string[]
 }

@@ -11,16 +11,30 @@ import {
 import * as express from 'express'
 import { AuthService } from './auth.service'
 import { JwtAuthGuard } from './jwt-auth.guard'
+import { UsersService } from '../users/users.service'
+
+interface UserPayload {
+	userId: number
+	email: string
+	role: string
+}
+
+interface RequestWithUser extends express.Request {
+	user: UserPayload
+}
 
 @Controller('auth')
 export class AuthController {
-	constructor(private readonly authService: AuthService) {}
+	constructor(
+		private readonly authService: AuthService,
+		private readonly usersService: UsersService,
+	) {}
 
 	@Post('login')
 	async login(
-		@Body() body: any,
+		@Body() body: Record<string, string>,
 		@Res({ passthrough: true }) res: express.Response,
-	) {
+	): Promise<{ message: string }> {
 		const user = await this.authService.validateUser(body.email, body.password)
 		if (!user) {
 			throw new UnauthorizedException()
@@ -31,14 +45,16 @@ export class AuthController {
 	}
 
 	@Post('logout')
-	async logout(@Res({ passthrough: true }) res: express.Response) {
+	logout(@Res({ passthrough: true }) res: express.Response): {
+		message: string
+	} {
 		res.clearCookie('jwt')
 		return { message: 'Logged out' }
 	}
 
 	@UseGuards(JwtAuthGuard)
 	@Get('me')
-	getMe(@Req() req: any) {
-		return req.user
+	async getMe(@Req() req: RequestWithUser) {
+		return this.usersService.findOne(req.user.userId)
 	}
 }

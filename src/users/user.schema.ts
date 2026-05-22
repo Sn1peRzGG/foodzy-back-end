@@ -1,15 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document } from 'mongoose'
+import { Document, SchemaTypes, Types } from 'mongoose'
 
 export type UserDocument = User & Document
 
 @Schema({ _id: false })
 class CartItem {
 	@Prop({
+		type: SchemaTypes.ObjectId,
+		ref: 'Product',
 		required: true,
-		min: 1,
 	})
-	productId!: number
+	product!: Types.ObjectId
 
 	@Prop({
 		required: true,
@@ -92,10 +93,10 @@ export class User {
 	cart!: CartItem[]
 
 	@Prop({
-		type: [Number],
+		type: [{ type: SchemaTypes.ObjectId, ref: 'Product' }],
 		default: [],
 	})
-	wishlist!: number[]
+	wishlist!: Types.ObjectId[]
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

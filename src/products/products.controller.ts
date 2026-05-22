@@ -15,10 +15,10 @@ import {
 	UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
+import { multerImageOptions } from '../common/config/multer.config'
 import { CreateProductDto } from './dto/create.dto'
 import { UpdateProductDto } from './dto/update.dto'
 import { ProductsService } from './products.service'
@@ -31,28 +31,7 @@ export class ProductsController {
 	@Roles('ADMIN')
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 4 * 1024 * 1024,
-			},
-			fileFilter: (req, file, cb) => {
-				const allowed = ['image/jpeg', 'image/png', 'image/webp']
-
-				if (!allowed.includes(file.mimetype)) {
-					return cb(
-						new BadRequestException(
-							'Only JPG, PNG and WEBP images are allowed',
-						),
-						false,
-					)
-				}
-
-				cb(null, true)
-			},
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', multerImageOptions))
 	create(
 		@Body() dto: CreateProductDto,
 		@UploadedFile() file: Express.Multer.File,
@@ -65,7 +44,6 @@ export class ProductsController {
 				},
 			})
 		}
-
 		return this.productsService.create(dto, file)
 	}
 
@@ -87,28 +65,7 @@ export class ProductsController {
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
 	@Patch(':id')
-	@UseInterceptors(
-		FileInterceptor('file', {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 4 * 1024 * 1024,
-			},
-			fileFilter: (req, file, cb) => {
-				const allowed = ['image/jpeg', 'image/png', 'image/webp']
-
-				if (!allowed.includes(file.mimetype)) {
-					return cb(
-						new BadRequestException(
-							'Only JPG, PNG and WEBP images are allowed',
-						),
-						false,
-					)
-				}
-
-				cb(null, true)
-			},
-		}),
-	)
+	@UseInterceptors(FileInterceptor('file', multerImageOptions))
 	update(
 		@Param('id') id: string,
 		@Body() dto: UpdateProductDto,
