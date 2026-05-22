@@ -148,7 +148,7 @@ export class CategoriesService {
 					imageUrl,
 				},
 				{
-					new: true,
+					returnDocument: 'after',
 				},
 			)
 

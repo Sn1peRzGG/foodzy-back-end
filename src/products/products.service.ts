@@ -164,7 +164,7 @@ export class ProductsService {
 					imageUrl,
 				},
 				{
-					new: true,
+					returnDocument: 'after',
 				},
 			)
 

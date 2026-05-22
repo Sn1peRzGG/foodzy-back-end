@@ -30,8 +30,42 @@ export class UsersController {
 
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
-	create(@Body() dto: CreateUserDto) {
-		return this.usersService.create(dto)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			storage: memoryStorage(),
+			limits: {
+				fileSize: 4 * 1024 * 1024,
+			},
+			fileFilter: (req, file, cb) => {
+				const allowed = ['image/jpeg', 'image/png', 'image/webp']
+
+				if (!allowed.includes(file.mimetype)) {
+					return cb(
+						new BadRequestException(
+							'Only JPG, PNG and WEBP images are allowed',
+						),
+						false,
+					)
+				}
+
+				cb(null, true)
+			},
+		}),
+	)
+	create(
+		@Body() dto: CreateUserDto,
+		@UploadedFile() file: Express.Multer.File,
+	) {
+		if (!file) {
+			throw new BadRequestException({
+				message: 'Validation failed',
+				errors: {
+					file: ['Image is required'],
+				},
+			})
+		}
+
+		return this.usersService.create(dto, file)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)

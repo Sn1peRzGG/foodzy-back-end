@@ -6,14 +6,14 @@ import {
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import * as bcrypt from 'bcrypt'
-import { Model } from 'mongoose'
-import { User, UserDocument } from './user.schema'
-import * as fs from 'fs/promises'
-import { existsSync, mkdirSync } from 'fs'
-import { extname, join } from 'path'
 import { randomUUID } from 'crypto'
+import { existsSync, mkdirSync } from 'fs'
+import * as fs from 'fs/promises'
+import { Model } from 'mongoose'
+import { extname, join } from 'path'
 import { CreateUserDto } from './dto/create.dto'
 import { UpdateUserDto } from './dto/update.dto'
+import { User, UserDocument } from './user.schema'
 
 @Injectable()
 export class UsersService {
@@ -49,13 +49,11 @@ export class UsersService {
 
 	private sanitizeUser(user: any) {
 		const obj = user.toObject ? user.toObject() : user
-
 		const { password, ...safeUser } = obj
-
 		return safeUser
 	}
 
-	async create(dto: CreateUserDto) {
+	async create(dto: CreateUserDto, file?: Express.Multer.File) {
 		const emailExists = await this.userModel.findOne({
 			email: dto.email.toLowerCase(),
 		})
@@ -83,21 +81,31 @@ export class UsersService {
 		}
 
 		const lastUser = await this.userModel.findOne().sort({ userId: -1 })
-
 		const userId = lastUser?.userId ? lastUser.userId + 1 : 1
+
+		let avatarUrl = ''
 
 		try {
 			const hashedPassword = await bcrypt.hash(dto.password, 10)
+
+			if (file) {
+				avatarUrl = await this.saveFile(file)
+			}
 
 			const user = await this.userModel.create({
 				...dto,
 				email: dto.email.toLowerCase(),
 				userId,
 				password: hashedPassword,
+				avatarUrl: avatarUrl || undefined,
 			})
 
 			return this.sanitizeUser(user)
-		} catch {
+		} catch (error) {
+			if (avatarUrl) {
+				await this.deleteFile(avatarUrl)
+			}
+
 			throw new InternalServerErrorException({
 				message: 'Failed to create user',
 			})
@@ -123,7 +131,6 @@ export class UsersService {
 		}
 
 		const { password, ...safeUser } = user
-
 		return safeUser
 	}
 
@@ -205,7 +212,7 @@ export class UsersService {
 					avatarUrl,
 				},
 				{
-					new: true,
+					returnDocument: 'after',
 				},
 			)
 
