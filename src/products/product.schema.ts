@@ -55,6 +55,25 @@ export class Product {
 		max: 5,
 	})
 	rating!: number
+
+	@Prop({
+		trim: true,
+		default: '',
+	})
+	weight?: string
+
+	@Prop({
+		type: Number,
+		min: 0,
+		default: 0,
+	})
+	calories?: number
+
+	@Prop({
+		type: Boolean,
+		default: true,
+	})
+	isAvailable!: boolean
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product)

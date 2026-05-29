@@ -142,7 +142,7 @@ export class UsersService {
 				email: email.toLowerCase(),
 			})
 			.select('+password')
-			.populate('cart.productId')
+			.populate('cart.product')
 			.populate('wishlist')
 
 		if (!user) {
@@ -220,7 +220,7 @@ export class UsersService {
 						returnDocument: 'after',
 					},
 				)
-				.populate('cart.productId')
+				.populate('cart.product')
 				.populate('wishlist')
 
 			if (file && current.avatarUrl) {

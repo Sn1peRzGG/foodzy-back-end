@@ -1,4 +1,6 @@
+import { Transform, Type } from 'class-transformer'
 import {
+	IsBoolean,
 	IsInt,
 	IsMongoId,
 	IsNumber,
@@ -9,7 +11,6 @@ import {
 	Min,
 	MinLength,
 } from 'class-validator'
-import { Type } from 'class-transformer'
 
 export class CreateProductDto {
 	@IsString()
@@ -42,4 +43,19 @@ export class CreateProductDto {
 	@Min(0)
 	@Max(5)
 	rating?: number
+
+	@IsOptional()
+	@IsString()
+	weight?: string
+
+	@IsOptional()
+	@Transform(({ value }) => Number(value))
+	@IsInt()
+	@Min(0)
+	calories?: number
+
+	@IsOptional()
+	@Transform(({ value }) => value === 'true' || value === true)
+	@IsBoolean()
+	isAvailable?: boolean
 }

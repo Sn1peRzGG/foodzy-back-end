@@ -70,6 +70,7 @@ export class ProductsService {
 
 			const productData = {
 				...dto,
+				isAvailable: dto.isAvailable ?? true,
 				category: new mongoose.Types.ObjectId(dto.category),
 				productId,
 				imageUrl,
@@ -77,7 +78,6 @@ export class ProductsService {
 
 			const createdProduct = new this.productModel(productData)
 			await createdProduct.save()
-
 			return await createdProduct.populate('category')
 		} catch {
 			if (imageUrl) {
