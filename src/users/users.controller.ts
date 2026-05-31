@@ -1,5 +1,4 @@
 import {
-	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -22,14 +21,11 @@ import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
 import { multerImageOptions } from '../common/config/multer.config'
 import { CreateUserDto } from './dto/create.dto'
-import { UpdateUserDto } from './dto/update.dto'
+import { CartItemDto, UpdateUserDto } from './dto/update.dto'
 import { UsersService } from './users.service'
 
 interface AuthenticatedRequest extends Request {
-	user: {
-		userId: number
-		role: string
-	}
+	user: { _id: string; role: string }
 }
 
 @Controller('users')
@@ -43,14 +39,6 @@ export class UsersController {
 		@Body() dto: CreateUserDto,
 		@UploadedFile() file: Express.Multer.File,
 	) {
-		if (!file) {
-			throw new BadRequestException({
-				message: 'Validation failed',
-				errors: {
-					file: ['Image is required'],
-				},
-			})
-		}
 		return this.usersService.create(dto, file)
 	}
 
@@ -64,15 +52,9 @@ export class UsersController {
 	@UseGuards(JwtAuthGuard)
 	@Get(':id')
 	findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-		const targetId = Number(id)
-
-		if (req.user.role !== 'ADMIN' && req.user.userId !== targetId) {
-			throw new ForbiddenException({
-				message: 'Access denied',
-			})
-		}
-
-		return this.usersService.findOne(targetId)
+		if (req.user.role !== 'ADMIN' && req.user._id !== id)
+			throw new ForbiddenException()
+		return this.usersService.findOne(id)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -84,25 +66,40 @@ export class UsersController {
 		@Req() req: AuthenticatedRequest,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
-		const targetId = Number(id)
+		if (req.user.role !== 'ADMIN' && req.user._id !== id)
+			throw new ForbiddenException()
+		if (req.user.role !== 'ADMIN') delete (dto as any).role
+		return this.usersService.update(id, dto, file)
+	}
 
-		if (req.user.role !== 'ADMIN' && req.user.userId !== targetId) {
-			throw new ForbiddenException({
-				message: 'Access denied',
-			})
-		}
+	@UseGuards(JwtAuthGuard)
+	@Post('cart')
+	addToCart(@Req() req: AuthenticatedRequest, @Body() item: CartItemDto) {
+		return this.usersService.addToCart(req.user._id, item)
+	}
 
-		if (req.user.role !== 'ADMIN') {
-			delete (dto as any).role
-		}
+	@UseGuards(JwtAuthGuard)
+	@Delete('cart/:productId')
+	removeFromCart(
+		@Req() req: AuthenticatedRequest,
+		@Param('productId') productId: string,
+	) {
+		return this.usersService.removeFromCart(req.user._id, productId)
+	}
 
-		return this.usersService.update(targetId, dto, file)
+	@UseGuards(JwtAuthGuard)
+	@Post('wishlist/:productId')
+	toggleWishlist(
+		@Req() req: AuthenticatedRequest,
+		@Param('productId') productId: string,
+	) {
+		return this.usersService.toggleWishlist(req.user._id, productId)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
 	@Delete(':id')
 	remove(@Param('id') id: string) {
-		return this.usersService.remove(+id)
+		return this.usersService.remove(id)
 	}
 }

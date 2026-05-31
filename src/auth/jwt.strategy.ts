@@ -17,16 +17,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 				return null
 			},
 			ignoreExpiration: false,
-			secretOrKey: 'super-secret-key',
+			secretOrKey:
+				'1c24cf521a1585154750e6c9737dd533684db5fc07ad842b84afa2d90c9d3d14',
 		})
 	}
 
 	async validate(payload: any) {
-		const user = await this.userModel.findOne({ userId: payload.sub })
+		const user = await this.userModel.findById(payload.sub).lean()
 
 		if (!user) {
-			throw new UnauthorizedException()
+			throw new UnauthorizedException('User not found or invalid token')
 		}
-		return user
+
+		return {
+			_id: user._id,
+			role: user.role,
+		}
 	}
 }

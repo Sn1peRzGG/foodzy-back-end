@@ -27,6 +27,41 @@ import { ProductsService } from './products.service'
 export class ProductsController {
 	constructor(private readonly productsService: ProductsService) {}
 
+	@Get('search')
+	search(
+		@Query('name') name?: string,
+		@Query('category') category?: string,
+		@Query('page') page: string = '1',
+		@Query('limit') limit: string = '20',
+		@Query('minPrice') minPrice?: string,
+		@Query('maxPrice') maxPrice?: string,
+		@Query('minRating') minRating?: string,
+		@Query('isAvailable') isAvailable?: string,
+		@Query('onSale') onSale?: string,
+	) {
+		const pageNum = parseInt(page, 10) || 1
+		const limitNum = parseInt(limit, 10) || 20
+
+		const minPriceNum = minPrice ? parseFloat(minPrice) : undefined
+		const maxPriceNum = maxPrice ? parseFloat(maxPrice) : undefined
+		const minRatingNum = minRating ? parseFloat(minRating) : undefined
+
+		const isAvailableBool = isAvailable === 'true' ? true : undefined
+		const onSaleBool = onSale === 'true' ? true : undefined
+
+		return this.productsService.search(
+			name,
+			category,
+			pageNum,
+			limitNum,
+			minPriceNum,
+			maxPriceNum,
+			minRatingNum,
+			isAvailableBool,
+			onSaleBool,
+		)
+	}
+
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
 	@Post()
@@ -39,9 +74,7 @@ export class ProductsController {
 		if (!file) {
 			throw new BadRequestException({
 				message: 'Validation failed',
-				errors: {
-					file: ['Image is required'],
-				},
+				errors: { file: ['Image is required'] },
 			})
 		}
 		return this.productsService.create(dto, file)
@@ -52,14 +85,9 @@ export class ProductsController {
 		return this.productsService.findAll()
 	}
 
-	@Get('search')
-	search(@Query('name') name?: string, @Query('category') category?: string) {
-		return this.productsService.search(name, category)
-	}
-
 	@Get(':id')
 	findOne(@Param('id') id: string) {
-		return this.productsService.findOne(+id)
+		return this.productsService.findOne(id)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
@@ -71,13 +99,13 @@ export class ProductsController {
 		@Body() dto: UpdateProductDto,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
-		return this.productsService.update(+id, dto, file)
+		return this.productsService.update(id, dto, file)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
 	@Delete(':id')
 	remove(@Param('id') id: string) {
-		return this.productsService.remove(+id)
+		return this.productsService.remove(id)
 	}
 }

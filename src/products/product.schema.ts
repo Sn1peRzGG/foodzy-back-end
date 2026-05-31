@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document, Schema as MongooseSchema } from 'mongoose'
-import { Category } from '../categories/category.schema'
+import { randomUUID } from 'crypto'
+import { Document } from 'mongoose'
 
 export type ProductDocument = Product & Document
 
@@ -10,10 +10,10 @@ export type ProductDocument = Product & Document
 })
 export class Product {
 	@Prop({
-		unique: true,
-		required: true,
+		type: String,
+		default: () => randomUUID(),
 	})
-	productId!: number
+	_id!: string
 
 	@Prop({
 		required: true,
@@ -32,11 +32,11 @@ export class Product {
 	imageUrl!: string
 
 	@Prop({
-		type: MongooseSchema.Types.ObjectId,
+		type: String,
 		ref: 'Category',
 		required: true,
 	})
-	category!: Category
+	category!: string
 
 	@Prop({
 		required: true,

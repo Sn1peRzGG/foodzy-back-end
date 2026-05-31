@@ -53,7 +53,7 @@ export class CategoriesController {
 
 	@Get(':id')
 	findOne(@Param('id') id: string) {
-		return this.categoriesService.findOne(+id)
+		return this.categoriesService.findOne(id)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
@@ -65,13 +65,13 @@ export class CategoriesController {
 		@Body() dto: UpdateCategoryDto,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
-		return this.categoriesService.update(+id, dto, file)
+		return this.categoriesService.update(id, dto, file)
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
 	@Delete(':id')
 	remove(@Param('id') id: string) {
-		return this.categoriesService.remove(+id)
+		return this.categoriesService.remove(id)
 	}
 }

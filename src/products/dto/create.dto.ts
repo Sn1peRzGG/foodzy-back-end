@@ -23,7 +23,7 @@ export class CreateProductDto {
 	@MaxLength(5000)
 	description?: string
 
-	@IsMongoId()
+	@IsString()
 	category!: string
 
 	@Type(() => Number)

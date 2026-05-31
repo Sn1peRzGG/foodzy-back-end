@@ -4,7 +4,7 @@ import { UsersService } from '../users/users.service'
 import * as bcrypt from 'bcrypt'
 
 interface ValidatedUser {
-	userId: number
+	_id: string
 	email: string
 	role: string
 	[key: string]: unknown
@@ -23,14 +23,14 @@ export class AuthService {
 	): Promise<ValidatedUser | null> {
 		const user = await this.usersService.findByEmail(email)
 		if (user && user.password && (await bcrypt.compare(pass, user.password))) {
-			const { password: _password, ...result } = user.toObject()
+			const { password, ...result } = user.toObject()
 			return result
 		}
 		return null
 	}
 
 	async login(user: ValidatedUser): Promise<{ access_token: string }> {
-		const payload = { email: user.email, sub: user.userId, role: user.role }
+		const payload = { email: user.email, sub: user._id, role: user.role }
 		return {
 			access_token: this.jwtService.sign(payload),
 		}

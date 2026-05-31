@@ -1,16 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document, SchemaTypes, Types } from 'mongoose'
+import { randomUUID } from 'crypto'
+import { Document } from 'mongoose'
 
 export type UserDocument = User & Document
 
 @Schema({ _id: false })
 class CartItem {
 	@Prop({
-		type: SchemaTypes.ObjectId,
+		type: String,
 		ref: 'Product',
 		required: true,
 	})
-	product!: Types.ObjectId
+	product!: string
 
 	@Prop({
 		required: true,
@@ -28,10 +29,10 @@ const CartItemSchema = SchemaFactory.createForClass(CartItem)
 })
 export class User {
 	@Prop({
-		unique: true,
-		required: true,
+		type: String,
+		default: () => randomUUID(),
 	})
-	userId!: number
+	_id!: string
 
 	@Prop({
 		required: true,
@@ -93,10 +94,10 @@ export class User {
 	cart!: CartItem[]
 
 	@Prop({
-		type: [{ type: SchemaTypes.ObjectId, ref: 'Product' }],
+		type: [{ type: String, ref: 'Product' }],
 		default: [],
 	})
-	wishlist!: Types.ObjectId[]
+	wishlist!: string[]
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

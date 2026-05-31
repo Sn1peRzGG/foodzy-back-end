@@ -14,7 +14,7 @@ import { JwtAuthGuard } from './jwt-auth.guard'
 import { UsersService } from '../users/users.service'
 
 interface UserPayload {
-	userId: number
+	_id: string
 	email: string
 	role: string
 }
@@ -55,6 +55,6 @@ export class AuthController {
 	@UseGuards(JwtAuthGuard)
 	@Get('me')
 	async getMe(@Req() req: RequestWithUser) {
-		return this.usersService.findOne(req.user.userId)
+		return this.usersService.findOne(req.user._id)
 	}
 }

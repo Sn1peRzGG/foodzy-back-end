@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { randomUUID } from 'crypto'
 import { Document } from 'mongoose'
 
 export type CategoryDocument = Category & Document
@@ -8,11 +9,8 @@ export type CategoryDocument = Category & Document
 	versionKey: false,
 })
 export class Category {
-	@Prop({
-		unique: true,
-		required: true,
-	})
-	categoryId!: number
+	@Prop({ type: String, default: () => randomUUID() })
+	_id!: string
 
 	@Prop({
 		required: true,

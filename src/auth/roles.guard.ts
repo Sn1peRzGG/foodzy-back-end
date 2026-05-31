@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core'
 import * as express from 'express'
 
 interface UserPayload {
-	userId: number
+	_id: string
 	email: string
 	role: string
 }

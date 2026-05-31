@@ -8,7 +8,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { randomUUID } from 'crypto'
 import { existsSync, mkdirSync } from 'fs'
 import * as fs from 'fs/promises'
-import * as mongoose from 'mongoose'
+import { Model } from 'mongoose'
 import { extname, join } from 'path'
 import { CreateProductDto } from './dto/create.dto'
 import { UpdateProductDto } from './dto/update.dto'
@@ -18,7 +18,7 @@ import { Product, ProductDocument } from './product.schema'
 export class ProductsService {
 	constructor(
 		@InjectModel(Product.name)
-		private readonly productModel: mongoose.Model<ProductDocument>,
+		private readonly productModel: Model<ProductDocument>,
 	) {}
 
 	private readonly uploadPath = join(process.cwd(), 'public', 'products')
@@ -27,12 +27,9 @@ export class ProductsService {
 		if (!existsSync(this.uploadPath)) {
 			mkdirSync(this.uploadPath, { recursive: true })
 		}
-
 		const filename = `${randomUUID()}${extname(file.originalname)}`
 		const filepath = join(this.uploadPath, filename)
-
 		await fs.writeFile(filepath, file.buffer)
-
 		return `/products/${filename}`
 	}
 
@@ -41,49 +38,29 @@ export class ProductsService {
 			const relativePath = path.replace(/^\/+/, '')
 			const fullPath = join(process.cwd(), 'public', relativePath)
 			await fs.unlink(fullPath)
-		} catch (error) {
-			void error
-		}
+		} catch {}
 	}
 
 	async create(dto: CreateProductDto, file: Express.Multer.File) {
-		const existing = await this.productModel.findOne({
-			name: dto.name,
-		})
-
+		const existing = await this.productModel.findOne({ name: dto.name })
 		if (existing) {
 			throw new ConflictException({
 				message: 'Product already exists',
-				errors: {
-					name: ['Product with this name already exists'],
-				},
+				errors: { name: ['Product with this name already exists'] },
 			})
 		}
 
-		const last = await this.productModel.findOne().sort({ productId: -1 })
-		const productId = last?.productId ? last.productId + 1 : 1
-
 		let imageUrl = ''
-
 		try {
 			imageUrl = await this.saveFile(file)
-
-			const productData = {
+			const product = await this.productModel.create({
 				...dto,
 				isAvailable: dto.isAvailable ?? true,
-				category: new mongoose.Types.ObjectId(dto.category),
-				productId,
 				imageUrl,
-			}
-
-			const createdProduct = new this.productModel(productData)
-			await createdProduct.save()
-			return await createdProduct.populate('category')
+			})
+			return await product.populate('category')
 		} catch {
-			if (imageUrl) {
-				await this.deleteFile(imageUrl)
-			}
-
+			if (imageUrl) await this.deleteFile(imageUrl)
 			throw new InternalServerErrorException({
 				message: 'Failed to create product',
 			})
@@ -94,132 +71,117 @@ export class ProductsService {
 		return this.productModel
 			.find()
 			.populate('category')
-			.sort({ productId: 1 })
+			.sort({ createdAt: -1 })
 			.lean()
 	}
 
-	async search(name?: string, category?: string) {
+	async search(
+		name?: string,
+		category?: string,
+		page: number = 1,
+		limit: number = 20,
+		minPrice?: number,
+		maxPrice?: number,
+		minRating?: number,
+		isAvailable?: boolean,
+		onSale?: boolean,
+	) {
 		const filter: any = {}
 
 		if (name) {
-			filter.name = {
-				$regex: name,
-				$options: 'i',
-			}
+			filter.name = { $regex: name, $options: 'i' }
 		}
 
-		if (category && mongoose.Types.ObjectId.isValid(category)) {
-			filter.category = new mongoose.Types.ObjectId(category)
+		if (category) {
+			filter.category = category
 		}
 
-		return this.productModel
+		if (minPrice !== undefined || maxPrice !== undefined) {
+			filter.price = {}
+			if (minPrice !== undefined) filter.price.$gte = minPrice
+			if (maxPrice !== undefined) filter.price.$lte = maxPrice
+		}
+
+		if (minRating !== undefined) {
+			filter.rating = { $gte: minRating }
+		}
+
+		if (isAvailable === true) {
+			filter.isAvailable = true
+		}
+
+		if (onSale === true) {
+			filter.oldPrice = { $gt: 0 }
+		}
+
+		const total = await this.productModel.countDocuments(filter)
+
+		const data = await this.productModel
 			.find(filter)
 			.populate('category')
-			.sort({ productId: 1 })
+			.sort({ isAvailable: -1 })
+			.skip((page - 1) * limit)
+			.limit(limit)
 			.lean()
+
+		return {
+			data,
+			meta: {
+				total,
+				page,
+				limit,
+				pages: Math.ceil(total / limit),
+			},
+		}
 	}
 
-	async findOne(productId: number) {
+	async findOne(id: string) {
 		const product = await this.productModel
-			.findOne({ productId })
+			.findById(id)
 			.populate('category')
 			.lean()
-
-		if (!product) {
-			throw new NotFoundException({
-				message: 'Product not found',
-			})
-		}
-
+		if (!product) throw new NotFoundException({ message: 'Product not found' })
 		return product
 	}
 
-	async update(
-		productId: number,
-		dto: UpdateProductDto,
-		file?: Express.Multer.File,
-	) {
-		const current = await this.productModel.findOne({
-			productId,
-		})
-
-		if (!current) {
-			throw new NotFoundException({
-				message: 'Product not found',
-			})
-		}
+	async update(id: string, dto: UpdateProductDto, file?: Express.Multer.File) {
+		const current = await this.productModel.findById(id)
+		if (!current) throw new NotFoundException({ message: 'Product not found' })
 
 		if (dto.name && dto.name !== current.name) {
-			const existing = await this.productModel.findOne({
-				name: dto.name,
-			})
-
+			const existing = await this.productModel.findOne({ name: dto.name })
 			if (existing) {
 				throw new ConflictException({
 					message: 'Product already exists',
-					errors: {
-						name: ['Product with this name already exists'],
-					},
+					errors: { name: ['Product with this name already exists'] },
 				})
 			}
 		}
 
 		let imageUrl = current.imageUrl
-
 		try {
-			if (file) {
-				imageUrl = await this.saveFile(file)
-			}
-
-			const updateData: mongoose.UpdateQuery<ProductDocument> = {
-				...dto,
-				imageUrl,
-			}
-
-			if (dto.category) {
-				updateData.category = new mongoose.Types.ObjectId(dto.category)
-			}
-
+			if (file) imageUrl = await this.saveFile(file)
 			const updated = await this.productModel
-				.findOneAndUpdate({ productId }, updateData, {
-					returnDocument: 'after',
-				})
+				.findByIdAndUpdate(
+					id,
+					{ ...dto, imageUrl },
+					{ returnDocument: 'after' },
+				)
 				.populate('category')
-
-			if (file && current.imageUrl) {
-				await this.deleteFile(current.imageUrl)
-			}
-
+			if (file && current.imageUrl) await this.deleteFile(current.imageUrl)
 			return updated
 		} catch {
-			if (file && imageUrl !== current.imageUrl) {
-				await this.deleteFile(imageUrl)
-			}
-
+			if (file && imageUrl !== current.imageUrl) await this.deleteFile(imageUrl)
 			throw new InternalServerErrorException({
 				message: 'Failed to update product',
 			})
 		}
 	}
 
-	async remove(productId: number) {
-		const product = await this.productModel.findOneAndDelete({
-			productId,
-		})
-
-		if (!product) {
-			throw new NotFoundException({
-				message: 'Product not found',
-			})
-		}
-
-		if (product.imageUrl) {
-			await this.deleteFile(product.imageUrl)
-		}
-
-		return {
-			success: true,
-			message: 'Product deleted successfully',
-		}
+	async remove(id: string) {
+		const product = await this.productModel.findByIdAndDelete(id)
+		if (!product) throw new NotFoundException({ message: 'Product not found' })
+		if (product.imageUrl) await this.deleteFile(product.imageUrl)
+		return { success: true, message: 'Product deleted successfully' }
 	}
 }
