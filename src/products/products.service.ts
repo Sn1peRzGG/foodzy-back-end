@@ -83,18 +83,17 @@ export class ProductsService {
 		minPrice?: number,
 		maxPrice?: number,
 		minRating?: number,
+		maxRating?: number,
 		isAvailable?: boolean,
 		onSale?: boolean,
+		sortBy?: string,
 	) {
 		const filter: any = {}
 
-		if (name) {
-			filter.name = { $regex: name, $options: 'i' }
-		}
+		if (name) filter.name = { $regex: name, $options: 'i' }
+		if (category) filter.category = category
 
-		if (category) {
-			filter.category = category
-		}
+		const boundsFilter = { ...filter }
 
 		if (minPrice !== undefined || maxPrice !== undefined) {
 			filter.price = {}
@@ -102,24 +101,44 @@ export class ProductsService {
 			if (maxPrice !== undefined) filter.price.$lte = maxPrice
 		}
 
-		if (minRating !== undefined) {
-			filter.rating = { $gte: minRating }
+		if (minRating !== undefined || maxRating !== undefined) {
+			filter.rating = {}
+			if (minRating !== undefined) filter.rating.$gte = minRating
+			if (maxRating !== undefined) filter.rating.$lte = maxRating
 		}
 
-		if (isAvailable === true) {
-			filter.isAvailable = true
-		}
-
-		if (onSale === true) {
-			filter.oldPrice = { $gt: 0 }
-		}
+		if (isAvailable === true) filter.isAvailable = true
+		if (onSale === true) filter.oldPrice = { $gt: 0 }
 
 		const total = await this.productModel.countDocuments(filter)
+
+		const bounds = await this.productModel.aggregate([
+			{ $match: boundsFilter },
+			{
+				$group: {
+					_id: null,
+					minPrice: { $min: '$price' },
+					maxPrice: { $max: '$price' },
+					minRating: { $min: '$rating' },
+					maxRating: { $max: '$rating' },
+				},
+			},
+		])
+
+		const globalMinPrice = bounds[0]?.minPrice ?? 0
+		const globalMaxPrice = bounds[0]?.maxPrice ?? 1000
+		const globalMinRating = bounds[0]?.minRating ?? 0
+		const globalMaxRating = bounds[0]?.maxRating ?? 5
+
+		const sortObject: any = { isAvailable: -1 }
+		if (sortBy === 'rating') {
+			sortObject.rating = -1
+		}
 
 		const data = await this.productModel
 			.find(filter)
 			.populate('category')
-			.sort({ isAvailable: -1 })
+			.sort(sortObject)
 			.skip((page - 1) * limit)
 			.limit(limit)
 			.lean()
@@ -131,6 +150,10 @@ export class ProductsService {
 				page,
 				limit,
 				pages: Math.ceil(total / limit),
+				minPrice: globalMinPrice,
+				maxPrice: globalMaxPrice,
+				minRating: globalMinRating,
+				maxRating: globalMaxRating,
 			},
 		}
 	}

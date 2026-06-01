@@ -77,3 +77,40 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product)
+
+async function updateCategoryCount(model: any, categoryId: string) {
+	if (!categoryId) return
+
+	const count = await model.countDocuments({ category: categoryId })
+
+	await model.db.model('Category').findByIdAndUpdate(categoryId, { count })
+}
+
+ProductSchema.post('save', async function (doc) {
+	const model = doc.$model(doc.constructor.name)
+	await updateCategoryCount(model, doc.category)
+})
+
+ProductSchema.post('findOneAndDelete', async function (doc) {
+	if (doc) {
+		const model = doc.$model(doc.constructor.name)
+		await updateCategoryCount(model, doc.category)
+	}
+})
+
+ProductSchema.pre('findOneAndUpdate', async function (this: any) {
+	this._updateDocBeforeUpdate = await this.model.findOne(this.getQuery()).lean()
+})
+
+ProductSchema.post('findOneAndUpdate', async function (this: any, doc) {
+	if (doc) {
+		const model = doc.$model(doc.constructor.name)
+
+		await updateCategoryCount(model, doc.category)
+
+		const oldCategory = this._updateDocBeforeUpdate?.category
+		if (oldCategory && oldCategory !== doc.category) {
+			await updateCategoryCount(model, oldCategory)
+		}
+	}
+})

@@ -36,8 +36,10 @@ export class ProductsController {
 		@Query('minPrice') minPrice?: string,
 		@Query('maxPrice') maxPrice?: string,
 		@Query('minRating') minRating?: string,
+		@Query('maxRating') maxRating?: string,
 		@Query('isAvailable') isAvailable?: string,
 		@Query('onSale') onSale?: string,
+		@Query('sortBy') sortBy?: string,
 	) {
 		const pageNum = parseInt(page, 10) || 1
 		const limitNum = parseInt(limit, 10) || 20
@@ -45,6 +47,7 @@ export class ProductsController {
 		const minPriceNum = minPrice ? parseFloat(minPrice) : undefined
 		const maxPriceNum = maxPrice ? parseFloat(maxPrice) : undefined
 		const minRatingNum = minRating ? parseFloat(minRating) : undefined
+		const maxRatingNum = maxRating ? parseFloat(maxRating) : undefined
 
 		const isAvailableBool = isAvailable === 'true' ? true : undefined
 		const onSaleBool = onSale === 'true' ? true : undefined
@@ -57,8 +60,10 @@ export class ProductsController {
 			minPriceNum,
 			maxPriceNum,
 			minRatingNum,
+			maxRatingNum,
 			isAvailableBool,
 			onSaleBool,
+			sortBy,
 		)
 	}
 
