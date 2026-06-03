@@ -19,4 +19,7 @@ export class CreateCategoryDto {
 	@IsInt()
 	@Min(0)
 	count?: number
+
+	@IsOptional()
+	file?: any
 }

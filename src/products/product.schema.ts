@@ -69,10 +69,7 @@ export class Product {
 	})
 	calories?: number
 
-	@Prop({
-		type: Boolean,
-		default: true,
-	})
+	@Prop({ type: Boolean })
 	isAvailable!: boolean
 }
 
@@ -87,13 +84,13 @@ async function updateCategoryCount(model: any, categoryId: string) {
 }
 
 ProductSchema.post('save', async function (doc) {
-	const model = doc.$model(doc.constructor.name)
+	const model = doc.$model('Product')
 	await updateCategoryCount(model, doc.category)
 })
 
 ProductSchema.post('findOneAndDelete', async function (doc) {
 	if (doc) {
-		const model = doc.$model(doc.constructor.name)
+		const model = doc.$model('Product')
 		await updateCategoryCount(model, doc.category)
 	}
 })
@@ -104,7 +101,7 @@ ProductSchema.pre('findOneAndUpdate', async function (this: any) {
 
 ProductSchema.post('findOneAndUpdate', async function (this: any, doc) {
 	if (doc) {
-		const model = doc.$model(doc.constructor.name)
+		const model = doc.$model('Product')
 
 		await updateCategoryCount(model, doc.category)
 

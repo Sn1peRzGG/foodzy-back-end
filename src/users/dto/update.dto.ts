@@ -4,7 +4,7 @@ import { IsEnum, IsOptional, IsString } from 'class-validator'
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
 	@IsOptional()
-	@IsEnum(['USER', 'ADMIN'])
+	@IsEnum(['USER', 'ADMIN', 'OWNER'])
 	role?: string
 }
 

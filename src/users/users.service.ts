@@ -1,5 +1,6 @@
 import {
 	ConflictException,
+	ForbiddenException,
 	Injectable,
 	InternalServerErrorException,
 	NotFoundException,
@@ -94,9 +95,18 @@ export class UsersService {
 			.select('+password')
 	}
 
-	async update(id: string, dto: UpdateUserDto, file?: Express.Multer.File) {
+	async update(
+		id: string,
+		dto: UpdateUserDto,
+		currentUserRole: string,
+		file?: Express.Multer.File,
+	) {
 		const current = await this.userModel.findById(id)
 		if (!current) throw new NotFoundException('User not found')
+
+		if (current.role === 'OWNER' && currentUserRole !== 'OWNER') {
+			throw new ForbiddenException('You cannot modify the Owner account')
+		}
 
 		const updateData: any = { ...dto }
 		if (dto.password) updateData.password = await bcrypt.hash(dto.password, 10)

@@ -12,20 +12,33 @@ interface RequestWithUser extends express.Request {
 	user?: UserPayload
 }
 
+const ROLE_HIERARCHY: Record<string, string[]> = {
+	USER: ['USER'],
+	ADMIN: ['ADMIN', 'USER'],
+	OWNER: ['OWNER', 'ADMIN', 'USER'],
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
 	constructor(private reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {
-		const roles = this.reflector.get<string[]>('roles', context.getHandler())
-		if (!roles) {
+		const requiredRoles = this.reflector.get<string[]>(
+			'roles',
+			context.getHandler(),
+		)
+		if (!requiredRoles) {
 			return true
 		}
+
 		const request = context.switchToHttp().getRequest<RequestWithUser>()
 		const user = request.user
 		if (!user) {
 			return false
 		}
-		return roles.includes(user.role)
+
+		const userRoles = ROLE_HIERARCHY[user.role] || []
+
+		return requiredRoles.some(role => userRoles.includes(role))
 	}
 }

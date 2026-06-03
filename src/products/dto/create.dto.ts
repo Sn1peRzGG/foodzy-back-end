@@ -2,7 +2,6 @@ import { Transform, Type } from 'class-transformer'
 import {
 	IsBoolean,
 	IsInt,
-	IsMongoId,
 	IsNumber,
 	IsOptional,
 	IsString,
@@ -55,7 +54,13 @@ export class CreateProductDto {
 	calories?: number
 
 	@IsOptional()
-	@Transform(({ value }) => value === 'true' || value === true)
+	@Transform(({ value }) => {
+		if (value === 'true' || value === true || value === 1 || value === '1')
+			return true
+		if (value === 'false' || value === false || value === 0 || value === '0')
+			return false
+		return value
+	})
 	@IsBoolean()
 	isAvailable?: boolean
 }

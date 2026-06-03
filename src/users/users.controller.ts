@@ -52,7 +52,11 @@ export class UsersController {
 	@UseGuards(JwtAuthGuard)
 	@Get(':id')
 	findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-		if (req.user.role !== 'ADMIN' && req.user._id !== id)
+		if (
+			req.user.role !== 'OWNER' &&
+			req.user.role !== 'ADMIN' &&
+			req.user._id !== id
+		)
 			throw new ForbiddenException()
 		return this.usersService.findOne(id)
 	}
@@ -66,10 +70,14 @@ export class UsersController {
 		@Req() req: AuthenticatedRequest,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
-		if (req.user.role !== 'ADMIN' && req.user._id !== id)
+		if (
+			req.user.role !== 'OWNER' &&
+			req.user.role !== 'ADMIN' &&
+			req.user._id !== id
+		)
 			throw new ForbiddenException()
-		if (req.user.role !== 'ADMIN') delete (dto as any).role
-		return this.usersService.update(id, dto, file)
+		if (req.user.role !== 'OWNER') delete (dto as any).role
+		return this.usersService.update(id, dto, req.user.role, file)
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -97,7 +105,7 @@ export class UsersController {
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles('ADMIN')
+	@Roles('OWNER')
 	@Delete(':id')
 	remove(@Param('id') id: string) {
 		return this.usersService.remove(id)

@@ -77,7 +77,7 @@ export class User {
 	address!: string
 
 	@Prop({
-		enum: ['USER', 'ADMIN'],
+		enum: ['USER', 'ADMIN', 'OWNER'],
 		default: 'USER',
 	})
 	role!: string

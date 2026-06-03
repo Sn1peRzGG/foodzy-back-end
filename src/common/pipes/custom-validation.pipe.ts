@@ -11,7 +11,7 @@ export const createCustomValidationPipe = () => {
 		forbidNonWhitelisted: true,
 		stopAtFirstError: false,
 		transformOptions: {
-			enableImplicitConversion: true,
+			enableImplicitConversion: false,
 		},
 		exceptionFactory: (errors: ValidationError[]) => {
 			const formattedErrors: Record<string, string[]> = {}
