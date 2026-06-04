@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Post,
 	Req,
@@ -56,5 +57,17 @@ export class AuthController {
 	@Get('me')
 	async getMe(@Req() req: RequestWithUser) {
 		return this.usersService.findOne(req.user._id)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Delete('me')
+	async deleteMe(
+		@Req() req: RequestWithUser,
+		@Res({ passthrough: true }) res: express.Response,
+	) {
+		await this.usersService.removeMe(req.user._id, req.user.role)
+
+		res.clearCookie('jwt')
+		return { success: true, message: 'Account permanently deleted' }
 	}
 }

@@ -71,6 +71,9 @@ export class Product {
 
 	@Prop({ type: Boolean })
 	isAvailable!: boolean
+
+	@Prop({ type: Boolean, default: false })
+	isDeleted!: boolean
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product)
@@ -78,7 +81,10 @@ export const ProductSchema = SchemaFactory.createForClass(Product)
 async function updateCategoryCount(model: any, categoryId: string) {
 	if (!categoryId) return
 
-	const count = await model.countDocuments({ category: categoryId })
+	const count = await model.countDocuments({
+		category: categoryId,
+		isDeleted: false,
+	})
 
 	await model.db.model('Category').findByIdAndUpdate(categoryId, { count })
 }
@@ -86,13 +92,6 @@ async function updateCategoryCount(model: any, categoryId: string) {
 ProductSchema.post('save', async function (doc) {
 	const model = doc.$model('Product')
 	await updateCategoryCount(model, doc.category)
-})
-
-ProductSchema.post('findOneAndDelete', async function (doc) {
-	if (doc) {
-		const model = doc.$model('Product')
-		await updateCategoryCount(model, doc.category)
-	}
 })
 
 ProductSchema.pre('findOneAndUpdate', async function (this: any) {

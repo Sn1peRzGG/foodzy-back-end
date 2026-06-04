@@ -75,17 +75,42 @@ export class UsersService {
 	}
 
 	async findAll() {
-		const users = await this.userModel.find().lean()
-		return users.map(u => this.sanitizeUser(u))
+		const users = await this.userModel
+			.find()
+			.populate({ path: 'cart.product', match: { isDeleted: false } })
+			.populate({ path: 'wishlist', match: { isDeleted: false } })
+			.lean()
+
+		return users.map(u => {
+			if (u.cart) u.cart = u.cart.filter(item => item.product !== null)
+			if (u.wishlist) u.wishlist = u.wishlist.filter(item => item !== null)
+			return this.sanitizeUser(u)
+		})
 	}
 
 	async findOne(id: string) {
 		const user = await this.userModel
 			.findById(id)
-			.populate('cart.product')
-			.populate('wishlist')
+			.populate({
+				path: 'cart.product',
+				match: { isDeleted: false },
+			})
+			.populate({
+				path: 'wishlist',
+				match: { isDeleted: false },
+			})
 			.lean()
+
 		if (!user) throw new NotFoundException('User not found')
+
+		if (user.cart) {
+			user.cart = user.cart.filter(item => item.product !== null)
+		}
+
+		if (user.wishlist) {
+			user.wishlist = user.wishlist.filter(item => item !== null)
+		}
+
 		return this.sanitizeUser(user)
 	}
 
@@ -137,6 +162,23 @@ export class UsersService {
 		const user = await this.userModel.findByIdAndDelete(id)
 		if (!user) throw new NotFoundException('User not found')
 		if (user.avatarUrl) await this.deleteFile(user.avatarUrl)
+		return { success: true }
+	}
+
+	async removeMe(id: string, currentUserRole: string) {
+		const user = await this.userModel.findById(id)
+		if (!user) throw new NotFoundException('User not found')
+
+		if (user.role === 'OWNER' && currentUserRole !== 'OWNER') {
+			throw new ForbiddenException('You cannot delete the Owner account')
+		}
+
+		await this.userModel.findByIdAndDelete(id)
+
+		if (user.avatarUrl) {
+			await this.deleteFile(user.avatarUrl)
+		}
+
 		return { success: true }
 	}
 

@@ -42,7 +42,10 @@ export class ProductsService {
 	}
 
 	async create(dto: CreateProductDto, file: Express.Multer.File) {
-		const existing = await this.productModel.findOne({ name: dto.name })
+		const existing = await this.productModel.findOne({
+			name: dto.name,
+			isDeleted: false,
+		})
 		if (existing) {
 			throw new ConflictException({
 				message: 'Product already exists',
@@ -57,6 +60,7 @@ export class ProductsService {
 				...dto,
 				isAvailable: dto.isAvailable ?? true,
 				imageUrl,
+				isDeleted: false,
 			})
 			return await product.populate('category')
 		} catch {
@@ -69,7 +73,7 @@ export class ProductsService {
 
 	async findAll() {
 		return this.productModel
-			.find()
+			.find({ isDeleted: false })
 			.populate('category')
 			.sort({ createdAt: -1 })
 			.lean()
@@ -88,7 +92,7 @@ export class ProductsService {
 		onSale?: boolean,
 		sortBy?: string,
 	) {
-		const filter: any = {}
+		const filter: any = { isDeleted: false }
 
 		if (name) filter.name = { $regex: name, $options: 'i' }
 		if (category) filter.category = category
@@ -160,7 +164,7 @@ export class ProductsService {
 
 	async findOne(id: string) {
 		const product = await this.productModel
-			.findById(id)
+			.findOne({ _id: id, isDeleted: false } as any)
 			.populate('category')
 			.lean()
 		if (!product) throw new NotFoundException({ message: 'Product not found' })
@@ -168,11 +172,17 @@ export class ProductsService {
 	}
 
 	async update(id: string, dto: UpdateProductDto, file?: Express.Multer.File) {
-		const current = await this.productModel.findById(id)
+		const current = await this.productModel.findOne({
+			_id: id,
+			isDeleted: false,
+		} as any)
 		if (!current) throw new NotFoundException({ message: 'Product not found' })
 
 		if (dto.name && dto.name !== current.name) {
-			const existing = await this.productModel.findOne({ name: dto.name })
+			const existing = await this.productModel.findOne({
+				name: dto.name,
+				isDeleted: false,
+			})
 			if (existing) {
 				throw new ConflictException({
 					message: 'Product already exists',
@@ -184,6 +194,7 @@ export class ProductsService {
 		let imageUrl = current.imageUrl
 		try {
 			if (file) imageUrl = await this.saveFile(file)
+
 			const updated = await this.productModel
 				.findByIdAndUpdate(
 					id,
@@ -191,6 +202,7 @@ export class ProductsService {
 					{ returnDocument: 'after' },
 				)
 				.populate('category')
+
 			if (file && current.imageUrl) await this.deleteFile(current.imageUrl)
 			return updated
 		} catch {
@@ -202,9 +214,14 @@ export class ProductsService {
 	}
 
 	async remove(id: string) {
-		const product = await this.productModel.findByIdAndDelete(id)
+		const product = await this.productModel.findByIdAndUpdate(
+			id,
+			{ isDeleted: true, isAvailable: false },
+			{ returnDocument: 'after' },
+		)
+
 		if (!product) throw new NotFoundException({ message: 'Product not found' })
-		if (product.imageUrl) await this.deleteFile(product.imageUrl)
+
 		return { success: true, message: 'Product deleted successfully' }
 	}
 }
