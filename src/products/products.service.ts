@@ -123,19 +123,31 @@ export class ProductsService {
 					_id: null,
 					minPrice: { $min: '$price' },
 					maxPrice: { $max: '$price' },
-					minRating: { $min: '$rating' },
-					maxRating: { $max: '$rating' },
 				},
 			},
 		])
 
-		const globalMinPrice = bounds[0]?.minPrice ?? 0
-		const globalMaxPrice = bounds[0]?.maxPrice ?? 1000
-		const globalMinRating = bounds[0]?.minRating ?? 0
-		const globalMaxRating = bounds[0]?.maxRating ?? 5
+		const globalMinPrice =
+			bounds[0]?.minPrice !== undefined && bounds[0]?.minPrice !== null
+				? Math.floor(bounds[0].minPrice)
+				: 0
+
+		const globalMaxPrice =
+			bounds[0]?.maxPrice !== undefined && bounds[0]?.maxPrice !== null
+				? Math.ceil(bounds[0].maxPrice)
+				: 100
+
+		const globalMinRating = 0
+
+		const globalMaxRating = 5
 
 		const sortObject: any = { isAvailable: -1 }
-		if (sortBy === 'rating') {
+
+		if (sortBy === 'price-asc') {
+			sortObject.price = 1
+		} else if (sortBy === 'price-desc') {
+			sortObject.price = -1
+		} else {
 			sortObject.rating = -1
 		}
 
