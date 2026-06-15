@@ -40,7 +40,7 @@ export class AuthController {
 		if (!user) {
 			throw new UnauthorizedException()
 		}
-		const tokenData = await this.authService.login(user)
+		const tokenData = this.authService.login(user)
 		res.cookie('jwt', tokenData.access_token, { httpOnly: true })
 		return { message: 'Success' }
 	}

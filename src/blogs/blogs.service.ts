@@ -42,7 +42,9 @@ export class BlogsService {
 			const relativePath = path.replace(/^\/+/, '')
 			const fullPath = join(process.cwd(), 'public', relativePath)
 			await fs.unlink(fullPath)
-		} catch {}
+		} catch {
+			// File deleted
+		}
 	}
 
 	async create(
@@ -56,7 +58,7 @@ export class BlogsService {
 				banner = await this.saveFile(bannerFile)
 			}
 			return await this.blogModel.create({ ...dto, banner, authorId })
-		} catch (error) {
+		} catch {
 			if (banner) await this.deleteFile(banner)
 			throw new InternalServerErrorException({
 				message: 'Failed to create blog post',
@@ -132,14 +134,14 @@ export class BlogsService {
 				finalBanner = newBanner
 			}
 
-			const { removeBanner, ...updateData } = dto as any
+			const { removeBanner: _removeBanner, ...updateData } = dto as any
 
 			return await this.blogModel.findByIdAndUpdate(
 				id,
 				{ ...updateData, banner: finalBanner },
 				{ returnDocument: 'after' },
 			)
-		} catch (error) {
+		} catch {
 			if (newBanner) await this.deleteFile(newBanner)
 			throw new InternalServerErrorException({
 				message: 'Failed to update blog post',

@@ -123,7 +123,7 @@ export class OrdersService {
 			throw new ForbiddenException('You can only update your own orders')
 		}
 
-		if (order.status !== 'PENDING') {
+		if (order.status !== OrderStatus.PENDING) {
 			throw new ForbiddenException(
 				'Cannot update address after the order has been processed',
 			)

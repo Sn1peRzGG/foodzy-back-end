@@ -38,7 +38,9 @@ export class ProductsService {
 			const relativePath = path.replace(/^\/+/, '')
 			const fullPath = join(process.cwd(), 'public', relativePath)
 			await fs.unlink(fullPath)
-		} catch {}
+		} catch {
+			// File deleted
+		}
 	}
 
 	async create(dto: CreateProductDto, file: Express.Multer.File) {

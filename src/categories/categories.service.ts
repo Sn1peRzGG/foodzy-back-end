@@ -38,7 +38,9 @@ export class CategoriesService {
 			const relativePath = path.replace(/^\/+/, '')
 			const fullPath = join(process.cwd(), 'public', relativePath)
 			await fs.unlink(fullPath)
-		} catch {}
+		} catch {
+			// File deleted
+		}
 	}
 
 	async create(dto: CreateCategoryDto, file: Express.Multer.File) {
@@ -54,7 +56,7 @@ export class CategoriesService {
 		try {
 			imageUrl = await this.saveFile(file)
 			return await this.categoryModel.create({ ...dto, imageUrl })
-		} catch (error) {
+		} catch {
 			if (imageUrl) await this.deleteFile(imageUrl)
 			throw new InternalServerErrorException({
 				message: 'Failed to create category',

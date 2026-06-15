@@ -36,11 +36,13 @@ export class UsersService {
 	private async deleteFile(path: string) {
 		try {
 			await fs.unlink(join(process.cwd(), 'public', path.replace(/^\/+/, '')))
-		} catch {}
+		} catch {
+			// File deleted
+		}
 	}
 
 	private sanitizeUser(user: any) {
-		const { password, ...safeUser } =
+		const { password: _password, ...safeUser } =
 			user instanceof Model ? user.toObject() : user
 		return safeUser
 	}
@@ -68,7 +70,7 @@ export class UsersService {
 				avatarUrl: avatarUrl || undefined,
 			})
 			return this.sanitizeUser(user)
-		} catch (error) {
+		} catch {
 			if (avatarUrl) await this.deleteFile(avatarUrl)
 			throw new InternalServerErrorException('Failed to create user')
 		}

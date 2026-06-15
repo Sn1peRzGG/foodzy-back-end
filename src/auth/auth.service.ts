@@ -23,13 +23,13 @@ export class AuthService {
 	): Promise<ValidatedUser | null> {
 		const user = await this.usersService.findByEmail(email)
 		if (user && user.password && (await bcrypt.compare(pass, user.password))) {
-			const { password, ...result } = user.toObject()
+			const { password: _password, ...result } = user.toObject()
 			return result
 		}
 		return null
 	}
 
-	async login(user: ValidatedUser): Promise<{ access_token: string }> {
+	login(user: ValidatedUser): { access_token: string } {
 		const payload = { email: user.email, sub: user._id, role: user.role }
 		return {
 			access_token: this.jwtService.sign(payload),
