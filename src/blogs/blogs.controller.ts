@@ -9,6 +9,7 @@ import {
 	Param,
 	Patch,
 	Post,
+	Query,
 	UploadedFile,
 	UseGuards,
 	UseInterceptors,
@@ -41,8 +42,15 @@ export class BlogsController {
 	}
 
 	@Get()
-	findAll() {
-		return this.blogsService.findAll()
+	findAll(
+		@Query('page') page: string = '1',
+		@Query('limit') limit: string = '10',
+		@Query('sortBy') sortBy: string = 'desc',
+	) {
+		const pageNum = parseInt(page, 10) || 1
+		const limitNum = parseInt(limit, 10) || 10
+
+		return this.blogsService.findAll(pageNum, limitNum, sortBy)
 	}
 
 	@Get(':id')

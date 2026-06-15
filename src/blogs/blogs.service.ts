@@ -64,12 +64,28 @@ export class BlogsService {
 		}
 	}
 
-	async findAll() {
-		return this.blogModel
+	async findAll(page: number = 1, limit: number = 10, sortBy: string = 'desc') {
+		const total = await this.blogModel.countDocuments()
+
+		const sortOrder = sortBy === 'asc' ? 1 : -1
+
+		const data = await this.blogModel
 			.find()
 			.populate('authorId', 'firstName')
-			.sort({ createdAt: -1 })
+			.sort({ createdAt: sortOrder })
+			.skip((page - 1) * limit)
+			.limit(limit)
 			.lean()
+
+		return {
+			data,
+			meta: {
+				total,
+				page,
+				limit,
+				pages: Math.ceil(total / limit),
+			},
+		}
 	}
 
 	async findOne(id: string) {
