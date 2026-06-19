@@ -12,8 +12,8 @@ import { existsSync, mkdirSync } from 'fs'
 import * as fs from 'fs/promises'
 import { Model } from 'mongoose'
 import { extname, join } from 'path'
-import { CreateUserDto } from './dto/create.dto'
-import { CartItemDto, UpdateUserDto } from './dto/update.dto'
+import { CreateUserDto } from './dto/create-user.dto'
+import { CartItemDto, UpdateUserDto } from './dto/update-user.dto'
 import { User, UserDocument } from './user.schema'
 
 @Injectable()

@@ -9,19 +9,19 @@ import {
 	Patch,
 	Post,
 	Query,
+	Req,
 	UploadedFile,
 	UseGuards,
 	UseInterceptors,
-	Req,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
-import { BlogsService } from './blogs.service'
-import { CreateBlogDto } from './dto/create.dto'
-import { UpdateBlogDto } from './dto/update.dto'
 import { multerImageOptions } from '../common/config/multer.config'
+import { BlogsService } from './blogs.service'
+import { CreateBlogDto } from './dto/create-blog.dto'
+import { UpdateBlogDto } from './dto/update-blog.dto'
 
 @Controller('blogs')
 export class BlogsController {

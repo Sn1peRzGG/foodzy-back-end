@@ -11,8 +11,8 @@ import * as fs from 'fs/promises'
 import { Model } from 'mongoose'
 import { extname, join } from 'path'
 import { Category, CategoryDocument } from './category.schema'
-import { CreateCategoryDto } from './dto/create.dto'
-import { UpdateCategoryDto } from './dto/update.dto'
+import { CreateCategoryDto } from './dto/create-category.dto'
+import { UpdateCategoryDto } from './dto/update-category.dto'
 
 @Injectable()
 export class CategoriesService {

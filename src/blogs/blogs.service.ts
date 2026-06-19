@@ -1,8 +1,8 @@
 import {
-	Injectable,
-	NotFoundException,
 	ForbiddenException,
+	Injectable,
 	InternalServerErrorException,
+	NotFoundException,
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { randomUUID } from 'crypto'
@@ -11,8 +11,8 @@ import * as fs from 'fs/promises'
 import { Model } from 'mongoose'
 import { extname, join } from 'path'
 import { Blog, BlogDocument } from './blog.schema'
-import { CreateBlogDto } from './dto/create.dto'
-import { UpdateBlogDto } from './dto/update.dto'
+import { CreateBlogDto } from './dto/create-blog.dto'
+import { UpdateBlogDto } from './dto/update-blog.dto'
 
 @Injectable()
 export class BlogsService {

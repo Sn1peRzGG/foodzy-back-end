@@ -19,8 +19,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { Roles } from '../auth/roles.decorator'
 import { RolesGuard } from '../auth/roles.guard'
 import { multerImageOptions } from '../common/config/multer.config'
-import { CreateProductDto } from './dto/create.dto'
-import { UpdateProductDto } from './dto/update.dto'
+import { CreateProductDto } from './dto/create-product.dto'
+import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductsService } from './products.service'
 
 @Controller('products')

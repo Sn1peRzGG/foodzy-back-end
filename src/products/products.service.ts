@@ -10,8 +10,8 @@ import { existsSync, mkdirSync } from 'fs'
 import * as fs from 'fs/promises'
 import { Model } from 'mongoose'
 import { extname, join } from 'path'
-import { CreateProductDto } from './dto/create.dto'
-import { UpdateProductDto } from './dto/update.dto'
+import { CreateProductDto } from './dto/create-product.dto'
+import { UpdateProductDto } from './dto/update-product.dto'
 import { Product, ProductDocument } from './product.schema'
 
 @Injectable()
