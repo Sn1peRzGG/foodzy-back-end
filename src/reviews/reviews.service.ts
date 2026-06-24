@@ -169,6 +169,7 @@ export class ReviewsService {
 		return this.reviewModel
 			.find({ product: productId, status: ReviewStatus.APPROVED })
 			.populate('user', 'firstName lastName avatarUrl')
+			.populate('product', 'name')
 			.exec()
 	}
 
@@ -176,6 +177,7 @@ export class ReviewsService {
 		return this.reviewModel
 			.find()
 			.populate('user', 'email firstName lastName')
+			.populate('product', 'name')
 			.exec()
 	}
 }
