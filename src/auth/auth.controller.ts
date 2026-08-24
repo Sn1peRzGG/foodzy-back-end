@@ -41,7 +41,12 @@ export class AuthController {
 			throw new UnauthorizedException()
 		}
 		const tokenData = this.authService.login(user)
-		res.cookie('jwt', tokenData.access_token, { httpOnly: true })
+		res.cookie('jwt', tokenData.access_token, {
+			httpOnly: true,
+			secure: true,
+			sameSite: 'none',
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		})
 		return { message: 'Success' }
 	}
 
