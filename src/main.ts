@@ -11,7 +11,7 @@ async function bootstrap() {
 	app.use(cookieParser())
 
 	app.enableCors({
-		origin: 'https://foodzy-back-end.onrender.com',
+		origin: 'https://foodzy-wheat.vercel.app',
 		credentials: true,
 	})
 
