@@ -11,8 +11,8 @@ import * as fs from 'fs/promises'
 import { Model } from 'mongoose'
 import { extname, join } from 'path'
 import { Category, CategoryDocument } from './category.schema'
-import { CreateCategoryDto } from './dto/create.dto'
-import { UpdateCategoryDto } from './dto/update.dto'
+import { CreateCategoryDto } from './dto/create-category.dto'
+import { UpdateCategoryDto } from './dto/update-category.dto'
 
 @Injectable()
 export class CategoriesService {
@@ -38,7 +38,9 @@ export class CategoriesService {
 			const relativePath = path.replace(/^\/+/, '')
 			const fullPath = join(process.cwd(), 'public', relativePath)
 			await fs.unlink(fullPath)
-		} catch {}
+		} catch {
+			// File deleted
+		}
 	}
 
 	async create(dto: CreateCategoryDto, file: Express.Multer.File) {
@@ -54,7 +56,7 @@ export class CategoriesService {
 		try {
 			imageUrl = await this.saveFile(file)
 			return await this.categoryModel.create({ ...dto, imageUrl })
-		} catch (error) {
+		} catch {
 			if (imageUrl) await this.deleteFile(imageUrl)
 			throw new InternalServerErrorException({
 				message: 'Failed to create category',

@@ -40,16 +40,8 @@ export class AuthController {
 		if (!user) {
 			throw new UnauthorizedException()
 		}
-		const tokenData = await this.authService.login(user)
-
-		const isProduction = process.env.NODE_ENV === 'production'
-
-		res.cookie('jwt', tokenData.access_token, {
-			httpOnly: true,
-			secure: isProduction,
-			sameSite: isProduction ? 'none' : 'lax',
-		})
-
+		const tokenData = this.authService.login(user)
+		res.cookie('jwt', tokenData.access_token, { httpOnly: true })
 		return { message: 'Success' }
 	}
 
@@ -57,14 +49,7 @@ export class AuthController {
 	logout(@Res({ passthrough: true }) res: express.Response): {
 		message: string
 	} {
-		const isProduction = process.env.NODE_ENV === 'production'
-
-		res.clearCookie('jwt', {
-			httpOnly: true,
-			secure: isProduction,
-			sameSite: isProduction ? 'none' : 'lax',
-		})
-
+		res.clearCookie('jwt')
 		return { message: 'Logged out' }
 	}
 
@@ -82,14 +67,7 @@ export class AuthController {
 	) {
 		await this.usersService.removeMe(req.user._id, req.user.role)
 
-		const isProduction = process.env.NODE_ENV === 'production'
-
-		res.clearCookie('jwt', {
-			httpOnly: true,
-			secure: isProduction,
-			sameSite: isProduction ? 'none' : 'lax',
-		})
-
+		res.clearCookie('jwt')
 		return { success: true, message: 'Account permanently deleted' }
 	}
 }
